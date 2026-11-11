@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>Balon Pintar - Game Berhitung Seru untuk Anak</title>
+<style>
+:root{
+  --sky1:#7fd1ff; --sky2:#d9f3ff; --ink:#1d2a5b; --sun:#ffc93c; --coral:#ff6b6b;
+  --mint:#2ec4a6; --grape:#8d6bff; --white:#fff;
+  --font:'Baloo 2','Nunito',ui-rounded,'Trebuchet MS','Comic Sans MS',system-ui,sans-serif;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent;user-select:none;-webkit-user-select:none}
+html,body{margin:0;height:100%;overflow:hidden;font-family:var(--font);color:var(--ink);touch-action:manipulation}
+body{background:linear-gradient(180deg,var(--sky1) 0%,var(--sky2) 100%)}
+button{font-family:inherit;cursor:pointer;border:0}
+.cloud{position:fixed;background:#fff;border-radius:99px;opacity:.85;animation:drift linear infinite;z-index:0}
+.cloud::before,.cloud::after{content:"";position:absolute;background:#fff;border-radius:50%}
+.cloud::before{width:55%;height:160%;left:12%;top:-70%}
+.cloud::after{width:40%;height:130%;right:14%;top:-45%}
+@keyframes drift{from{transform:translateX(-30vw)}to{transform:translateX(130vw)}}
+.screen{position:fixed;inset:0;display:none;flex-direction:column;align-items:center;justify-content:center;padding:max(16px,env(safe-area-inset-top)) 18px max(16px,env(safe-area-inset-bottom));z-index:2;text-align:center}
+.screen.on{display:flex}
+h1{font-size:clamp(2.4rem,9vw,4rem);margin:0;line-height:1;letter-spacing:-.5px;text-shadow:0 4px 0 rgba(255,255,255,.8)}
+.sub{margin:.4rem 0 1.4rem;font-size:1.1rem;font-weight:600;opacity:.85}
+.mascot{font-size:5rem;animation:bob 2.2s ease-in-out infinite}
+@keyframes bob{50%{transform:translateY(-12px) rotate(4deg)}}
+.modes{display:grid;grid-template-columns:1fr 1fr;gap:12px;width:min(420px,100%)}
+.mode{background:var(--white);border-radius:22px;padding:14px 8px;font-size:1.25rem;font-weight:800;color:var(--ink);box-shadow:0 6px 0 rgba(29,42,91,.2);transition:transform .1s}
+.mode:active{transform:translateY(4px);box-shadow:0 2px 0 rgba(29,42,91,.2)}
+.mode small{display:block;font-size:.8rem;font-weight:600;opacity:.7}
+.mode[data-m=add]{background:#ffe9a8}.mode[data-m=sub]{background:#c9f5e9}
+.mode[data-m=mul]{background:#e3d9ff}.mode[data-m=mix]{background:#ffd3d3}
+.tools{margin-top:18px;display:flex;gap:10px}
+.pill{background:rgba(255,255,255,.8);border-radius:99px;padding:8px 16px;font-weight:700;font-size:.95rem;color:var(--ink)}
+.credit{position:absolute;bottom:max(10px,env(safe-area-inset-bottom));font-size:.8rem;opacity:.6;font-weight:600}
+/* game */
+#game{justify-content:flex-start;padding:0}
+.hud{width:100%;display:flex;justify-content:space-between;align-items:center;padding:max(10px,env(safe-area-inset-top)) 14px 6px;font-weight:800;font-size:1.15rem;position:relative;z-index:5}
+.hud .lives{letter-spacing:2px}
+.hud .lvl{background:var(--ink);color:#fff;border-radius:99px;padding:2px 12px;font-size:.95rem}
+.q{margin:4px 0 0;background:#fff;border-radius:26px;padding:8px 26px;font-size:clamp(2rem,9vw,3.2rem);font-weight:800;box-shadow:0 6px 0 rgba(29,42,91,.2);position:relative;z-index:5;min-width:200px}
+.q.pop{animation:qpop .35s}
+@keyframes qpop{40%{transform:scale(1.12)}}
+.streak{height:1.6rem;margin-top:6px;font-weight:800;color:var(--coral);position:relative;z-index:5}
+.field{position:relative;flex:1;width:100%;overflow:hidden}
+.b{position:absolute;left:0;top:0;will-change:transform;touch-action:manipulation}
+.b i{display:flex;align-items:center;justify-content:center;font-style:normal;font-weight:800;color:#fff;width:var(--s);height:calc(var(--s)*1.18);border-radius:50% 50% 48% 48%;font-size:calc(var(--s)*.4);text-shadow:0 2px 0 rgba(0,0,0,.18);box-shadow:inset -8px -10px 0 rgba(0,0,0,.12),inset 8px 8px 0 rgba(255,255,255,.25);position:relative}
+.b i::after{content:"";position:absolute;bottom:-9px;left:50%;margin-left:-7px;border:7px solid transparent;border-bottom-color:inherit;border-top:0;border-bottom:10px solid currentColor;color:inherit}
+.b::after{content:"";position:absolute;left:50%;top:calc(var(--s)*1.18 + 8px);width:2px;height:36px;background:rgba(29,42,91,.35);transform:translateX(-50%)}
+.fx{position:absolute;pointer-events:none;font-size:2rem;font-weight:800;animation:fly .8s forwards;z-index:6}
+@keyframes fly{to{transform:translateY(-70px) scale(1.4);opacity:0}}
+.shake{animation:shake .3s}
+@keyframes shake{25%{transform:translateX(-8px)}75%{transform:translateX(8px)}}
+.flash{position:fixed;inset:0;background:rgba(255,80,80,.35);pointer-events:none;z-index:9;animation:fl .3s forwards}
+@keyframes fl{to{opacity:0}}
+/* over */
+.card{background:#fff;border-radius:30px;padding:24px 22px;width:min(380px,100%);box-shadow:0 8px 0 rgba(29,42,91,.2)}
+.stars{font-size:2.6rem;letter-spacing:6px;margin:4px 0}
+.big{font-size:3.4rem;font-weight:800;line-height:1}
+.msg{font-weight:700;margin:6px 0 16px}
+.btn{display:block;width:100%;margin-top:10px;padding:14px;border-radius:18px;font-size:1.2rem;font-weight:800;color:#fff;box-shadow:0 5px 0 rgba(0,0,0,.2)}
+.btn:active{transform:translateY(3px);box-shadow:0 2px 0 rgba(0,0,0,.2)}
+.go{background:var(--mint)}.share{background:var(--grape)}.home{background:var(--ink)}
+.toast{position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:var(--ink);color:#fff;padding:10px 18px;border-radius:99px;font-weight:700;z-index:20;display:none}
+@media (prefers-reduced-motion:reduce){.cloud,.mascot{animation:none}}
+</style>
+</head>
+<body>
+
+<div id="clouds"></div>
+
+<!-- MENU -->
+<section class="screen on" id="menu">
+  <div class="mascot">🎈</div>
+  <h1 id="title">Balon Pintar</h1>
+  <p class="sub">Pecahkan balon dengan jawaban yang benar!</p>
+  <div class="modes">
+    <button class="mode" data-m="add">➕ Tambah<small id="hs-add"></small></button>
+    <button class="mode" data-m="sub">➖ Kurang<small id="hs-sub"></small></button>
+    <button class="mode" data-m="mul">✖️ Kali<small id="hs-mul"></small></button>
+    <button class="mode" data-m="mix">🎲 Campur<small id="hs-mix"></small></button>
+  </div>
+  <div class="tools"><button class="pill" id="snd">🔊 Suara: Nyala</button></div>
+  <div class="credit" id="credit"></div>
+</section>
+
+<!-- GAME -->
+<section class="screen" id="game">
+  <div class="hud"><span>⭐ <b id="score">0</b></span><span class="lvl" id="lvl">Level 1</span><span class="lives" id="lives"></span></div>
+  <div class="q" id="q">? + ? = ?</div>
+  <div class="streak" id="streak"></div>
+  <div class="field" id="field"></div>
+</section>
+
+<!-- GAME OVER -->
+<section class="screen" id="over">
+  <div class="card">
+    <div class="stars" id="ostars"></div>
+    <div class="big" id="oscore">0</div>
+    <div class="msg" id="omsg"></div>
+    <div id="obest" class="pill" style="display:inline-block;margin-bottom:6px"></div>
+    <button class="btn go" id="again">🔄 Main Lagi</button>
+    <button class="btn share" id="share">📣 Pamerkan Skor</button>
+    <button class="btn home" id="tohome">🏠 Menu</button>
+  </div>
+</section>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* ====== PENGATURAN (silakan ubah untuk branding produkmu) ====== */
+const CONFIG = {
+  gameName: "Balon Pintar",
+  credit: "Dibuat dengan ❤️ untuk anak Indonesia",
+  startLives: 3,
+  correctPerLevel: 5
+};
+/* =============================================================== */
+
+const $ = id => document.getElementById(id);
+const COLORS = ['#ff6b6b','#ff9f43','#2ec4a6','#8d6bff','#ff6fb5','#3d9bff'];
+const MODE_NAME = {add:'Tambah',sub:'Kurang',mul:'Kali',mix:'Campur'};
+let S = null, sound = true, raf = 0, store = {};
+
+/* penyimpanan aman (tetap jalan walau localStorage diblokir) */
+function load(k){ try{ return JSON.parse(localStorage.getItem(k)); }catch(e){ return store[k]; } }
+function save(k,v){ store[k]=v; try{ localStorage.setItem(k,JSON.stringify(v)); }catch(e){} }
+
+document.title = CONFIG.gameName + " - Game Berhitung Seru untuk Anak";
+$('title').textContent = CONFIG.gameName;
+$('credit').textContent = CONFIG.credit;
+
+/* awan */
+for(let i=0;i<5;i++){
+  const c=document.createElement('div'); c.className='cloud';
+  const w=70+Math.random()*80;
+  c.style.cssText=`width:${w}px;height:${w*.32}px;top:${5+Math.random()*60}vh;animation-duration:${50+Math.random()*50}s;animation-delay:-${Math.random()*80}s`;
+  $('clouds').appendChild(c);
+}
+
+function refreshBest(){
+  for(const m in MODE_NAME){ const b=load('best_'+m)||0; $('hs-'+m).textContent = b? 'Rekor: '+b : 'Belum main'; }
+}
+refreshBest();
+
+/* suara */
+let ac;
+function tone(f,d=.12,type='sine',v=.15,when=0){
+  if(!sound) return;
+  try{
+    ac = ac || new (window.AudioContext||window.webkitAudioContext)();
+    const o=ac.createOscillator(), g=ac.createGain();
+    o.type=type; o.frequency.value=f; g.gain.value=v;
+    o.connect(g); g.connect(ac.destination);
+    const t=ac.currentTime+when;
+    g.gain.exponentialRampToValueAtTime(.001,t+d);
+    o.start(t); o.stop(t+d);
+  }catch(e){}
+}
+const sfx = {
+  pop:(s)=>{ tone(520+s*40,.1,'triangle'); tone(780+s*40,.12,'triangle',.12,.07); },
+  bad:()=>{ tone(180,.25,'sawtooth',.12); },
+  level:()=>{ [523,659,784,1047].forEach((f,i)=>tone(f,.15,'triangle',.14,i*.09)); },
+  over:()=>{ [392,330,262].forEach((f,i)=>tone(f,.25,'sine',.14,i*.18)); }
+};
+$('snd').onclick=()=>{ sound=!sound; $('snd').textContent = sound?'🔊 Suara: Nyala':'🔇 Suara: Mati'; };
+
+function show(id){ document.querySelectorAll('.screen').forEach(s=>s.classList.remove('on')); $(id).classList.add('on'); }
+
+/* soal */
+const rnd=(a,b)=>Math.floor(Math.random()*(b-a+1))+a;
+function makeQ(){
+  let m = S.mode==='mix' ? ['add','sub','mul'][rnd(0,2)] : S.mode;
+  const L=S.level;
+  let a,b,ans,text;
+  if(m==='add'){ const mx=Math.min(8+L*4,60); a=rnd(1,mx); b=rnd(1,mx); ans=a+b; text=`${a} + ${b}`; }
+  else if(m==='sub'){ const mx=Math.min(8+L*4,60); a=rnd(2,mx); b=rnd(1,a); ans=a-b; text=`${a} − ${b}`; }
+  else { const t=Math.min(1+L,10); a=rnd(2,Math.max(2,t)); b=rnd(1,10); ans=a*b; text=`${a} × ${b}`; }
+  S.q={text,ans};
+  $('q').textContent=text+' = ?';
+  $('q').classList.remove('pop'); void $('q').offsetWidth; $('q').classList.add('pop');
+}
+
+/* balon */
+function spawn(correct){
+  const f=$('field'), W=f.clientWidth, H=f.clientHeight;
+  const size = Math.max(64, Math.min(92, W/4.6));
+  let val;
+  if(correct) val=S.q.ans;
+  else { do{ val = S.q.ans + rnd(-6,6); if(Math.random()<.3) val=rnd(0,Math.max(10,S.q.ans*2)); }while(val===S.q.ans||val<0); }
+  const el=document.createElement('div'); el.className='b';
+  el.style.setProperty('--s',size+'px');
+  const col=COLORS[rnd(0,COLORS.length-1)];
+  el.innerHTML=`<i style="background:${col};color:${col}"><span style="color:#fff">${val}</span></i>`;
+  const bal={el,val,correct,size,x:rnd(6,Math.max(8,W-size-6)),y:H+10,
+             sp:(70+S.level*12+rnd(0,30)),ph:Math.random()*6,dead:false};
+  el.addEventListener('pointerdown',e=>{ e.preventDefault(); tap(bal); });
+  f.appendChild(el); S.balloons.push(bal);
+}
+
+function fxText(x,y,t,c){
+  const d=document.createElement('div'); d.className='fx'; d.textContent=t; d.style.cssText=`left:${x}px;top:${y}px;color:${c}`;
+  $('field').appendChild(d); setTimeout(()=>d.remove(),800);
+}
+
+function clearBalloons(){ S.balloons.forEach(b=>b.el.remove()); S.balloons=[]; }
+
+function tap(b){
+  if(!S||!S.running||b.dead) return;
+  b.dead=true;
+  if(b.correct){
+    S.streak++; S.done++;
+    const pts=10+Math.min(S.streak-1,10)*2;
+    S.score+=pts;
+    fxText(b.x+b.size/3,b.y,'+'+pts,'#e08a00');
+    sfx.pop(Math.min(S.streak,10));
+    b.el.remove(); S.balloons=S.balloons.filter(x=>x!==b);
+    if(S.done%CONFIG.correctPerLevel===0){ S.level++; sfx.level(); toast('🎉 Naik ke Level '+S.level+'!'); }
+    updateHud(); clearBalloons(); makeQ(); S.spawnT=0; S.needCorrect=true;
+  }else{
+    fxText(b.x+b.size/3,b.y,'✖','#ff3b3b');
+    b.el.remove(); S.balloons=S.balloons.filter(x=>x!==b);
+    lose();
+  }
+}
+
+function lose(){
+  S.lives--; S.streak=0; sfx.bad();
+  const fl=document.createElement('div'); fl.className='flash'; document.body.appendChild(fl); setTimeout(()=>fl.remove(),300);
+  $('game').classList.remove('shake'); void $('game').offsetWidth; $('game').classList.add('shake');
+  updateHud();
+  if(S.lives<=0) return end();
+}
+
+function updateHud(){
+  $('score').textContent=S.score;
+  $('lvl').textContent='Level '+S.level;
+  $('lives').textContent='❤️'.repeat(Math.max(0,S.lives))+'🖤'.repeat(Math.max(0,CONFIG.startLives-S.lives));
+  $('streak').textContent = S.streak>=3 ? '🔥 Beruntun x'+S.streak+'!' : '';
+}
+
+/* loop */
+function frame(t){
+  if(!S||!S.running) return;
+  const dt=Math.min(.05,(t-S.last)/1000); S.last=t;
+  S.spawnT-=dt;
+  const hasCorrect=S.balloons.some(b=>b.correct);
+  if(S.spawnT<=0){
+    spawn(!hasCorrect && (S.needCorrect || Math.random()<.5));
+    S.needCorrect=false;
+    S.spawnT=Math.max(.55,1.15-S.level*.05);
+  }
+  const arr=S.balloons.slice();
+  for(const b of arr){
+    b.y-=b.sp*dt;
+    const sway=Math.sin(t/600+b.ph)*10;
+    b.el.style.transform=`translate(${b.x+sway}px,${b.y}px)`;
+    if(b.y<-b.size*1.6){
+      b.el.remove(); S.balloons=S.balloons.filter(x=>x!==b);
+      if(b.correct){
+        toast('Jawabannya '+S.q.ans+' 😉');
+        clearBalloons(); makeQ(); S.needCorrect=true; S.spawnT=0; lose();
+        if(!S.running) return;
+      }
+    }
+  }
+  raf=requestAnimationFrame(frame);
+}
+
+function start(mode){
+  cancelAnimationFrame(raf);
+  S={mode,score:0,lives:CONFIG.startLives,level:1,streak:0,done:0,balloons:[],running:true,spawnT:0,needCorrect:true,last:performance.now(),q:null};
+  $('field').innerHTML='';
+  show('game'); updateHud(); makeQ();
+  if(ac&&ac.state==='suspended') ac.resume();
+  raf=requestAnimationFrame(t=>{S.last=t;frame(t);});
+}
+
+function end(){
+  S.running=false; cancelAnimationFrame(raf); sfx.over();
+  const key='best_'+S.mode, best=load(key)||0, isNew=S.score>best;
+  if(isNew) save(key,S.score);
+  const stars = S.score>=200?3 : S.score>=80?2 : S.score>=20?1 : 0;
+  $('ostars').textContent='⭐'.repeat(stars)+'☆'.repeat(3-stars);
+  $('oscore').textContent=S.score;
+  $('omsg').textContent = S.score>=200?'Luar biasa! Kamu jagoan matematika! 🏆' : S.score>=80?'Hebat! Sedikit lagi jadi juara! 💪' : 'Bagus! Ayo coba lagi, pasti bisa! 😊';
+  $('obest').textContent = isNew ? '🏅 Rekor baru!' : 'Rekor: '+best;
+  refreshBest(); show('over');
+}
+
+function toast(t){ const e=$('toast'); e.textContent=t; e.style.display='block'; clearTimeout(toast.t); toast.t=setTimeout(()=>e.style.display='none',1800); }
+
+document.querySelectorAll('.mode').forEach(b=>b.onclick=()=>start(b.dataset.m));
+$('again').onclick=()=>start(S.mode);
+$('tohome').onclick=()=>show('menu');
+$('share').onclick=async()=>{
+  const text=`Aku dapat ${S.score} poin di ${CONFIG.gameName} (mode ${MODE_NAME[S.mode]})! 🎈 Bisa kalahin aku?`;
+  try{
+    if(navigator.share){ await navigator.share({title:CONFIG.gameName,text}); }
+    else { await navigator.clipboard.writeText(text); toast('Teks skor disalin! Tempel ke chat temanmu 📋'); }
+  }catch(e){ toast('Skormu: '+S.score+' ⭐'); }
+};
+document.addEventListener('visibilitychange',()=>{
+  if(document.hidden && S && S.running){ S.running=false; cancelAnimationFrame(raf); S.paused=true; toast('Game dijeda. Ketuk layar untuk lanjut'); }
+});
+$('game').addEventListener('pointerdown',()=>{
+  if(S && S.paused){ S.paused=false; S.running=true; S.last=performance.now(); raf=requestAnimationFrame(frame); }
+});
+</script>
+</body>
+</html>
